@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>링크 생성기</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        form {
+            max-width: 500px;
+            margin: 0 auto;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            margin-top: 10px;
+        }
+        button {
+            margin-top: 10px;
+        }
+        .btn-light {
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+        }
+        #generatedLink {
+            margin-top: 20px;
+            text-align: center;
+            word-break: break-word;
+        }
+        #actionDescription {
+            padding: 10px;
+            margin-top: 20px;
+            background-color: #f1f3f5;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            display: none;
+        }
+        h2 {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .sort-dropdown {
+            display: inline-block;
+            float: right;
+            width: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>링크 생성기</h1>
+
+    <form id="linkForm">
+        <div class="mb-3">
+            <label for="action" class="form-label">액션 선택</label>
+            <select id="sortOptions" class="form-select form-select-sm sort-dropdown" onchange="sortActionsAndReset()">
+                <option value="">정렬 기준</option>
+                <option value="nameAsc">이름순 오름차순</option>
+                <option value="nameDesc">이름순 내림차순</option>
+                <option value="valueAsc">값순 오름차순</option>
+                <option value="valueDesc">값순 내림차순</option>
+            </select>
+            <select id="action" name="action" class="form-select" onchange="updateFields()">
+                <option value="">-- 선택하세요 --</option>
+                <option value="ACTION_LINK_ALARM">알림함으로 이동 (ACTION_LINK_ALARM)</option>
+                <option value="ACTION_LINK_INQUIRY_WRITE">고객소리함 화면으로 이동 (ACTION_LINK_INQUIRY_WRITE)</option>
+                <option value="ACTION_LINK_MILEAGE">마일리지 화면으로 이동 (ACTION_LINK_MILEAGE)</option>
+                <option value="ACTION_LINK_PAY_MANAGEMENT">결제수단 관리 화면으로 이동 (ACTION_LINK_PAY_MANAGEMENT)</option>
+                <option value="ACTION_LINK_COUPON_PUBLISH">쿠폰 등록 화면 (ACTION_LINK_COUPON_PUBLISH)</option>
+                <option value="ACTION_LINK_VOUCHER_PRODUCT_LIST">상품권 구매 화면 (ACTION_LINK_VOUCHER_PRODUCT_LIST)</option>
+                <option value="ACTION_LINK_VOUCHER">상품권 보관함으로 이동 (ACTION_LINK_VOUCHER)</option>
+                <option value="ACTION_LINK_NOTICE">공지사항 상세 (ACTION_LINK_NOTICE)</option>
+                <option value="ACTION_LINK_EVENT">이벤트 상세 (ACTION_LINK_EVENT)</option>
+                <option value="ACTION_LINK_BRAND_LIST">브랜드 목록 화면 (ACTION_LINK_BRAND_LIST)</option>
+                <option value="ACTION_LINK_SHOP_LIST">상점 목록 화면 (ACTION_LINK_SHOP_LIST)</option>
+                <option value="ACTION_LINK_SHOP">상점 상세 화면 (ACTION_LINK_SHOP)</option>
+                <option value="ACTION_LINK_SHOP_SEARCH">상점 검색 (ACTION_LINK_SHOP_SEARCH)</option>
+                <option value="ACTION_LINK_MENU">메뉴 상세 화면 (ACTION_LINK_MENU)</option>
+                <option value="ACTION_LINK_TRADITION_LIST">전통시장 목록 화면 (ACTION_LINK_TRADITION_LIST)</option>
+                <option value="ACTION_LINK_TRADITION">전통시장 상세 화면 (ACTION_LINK_TRADITION)</option>
+                <option value="ACTION_LINK_ALLEY">골목상권 화면 (ACTION_LINK_ALLEY)</option>
+                <option value="ACTION_LINK_PRODUCT_LIST">상품 목록 화면 (ACTION_LINK_PRODUCT_LIST)</option>
+                <option value="ACTION_LINK_PRODUCT">상품 상세 화면 (ACTION_LINK_PRODUCT)</option>
+                <option value="ACTION_LINK_PRODUCT_SEARCH">상품 검색 화면 (ACTION_LINK_PRODUCT_SEARCH)</option>
+                <option value="ACTION_LINK_ORDER">주문 목록 화면 (ACTION_LINK_ORDER)</option>
+            </select>
+            <div id="actionDescription"></div>
+        </div>
+        
+        <div class="mb-3" style="display: none;" id="projectWrapper">
+            <label for="project" class="form-label">프로젝트 선택</label>
+            <select id="project" name="project" class="form-select">
+                <!-- 옵션은 updateFields 함수에서 동적으로 추가됩니다 -->
+            </select>
+        </div>
+
+        <div id="dynamicFields"></div>
+
+        <div class="d-flex justify-content-between">
+            <button type="button" class="btn btn-warning" onclick="resetAllFields()">전체 초기화</button>
+            <button type="button" class="btn btn-secondary" onclick="resetProject()">프로젝트 초기화</button>
+            <button type="button" class="btn btn-light" onclick="resetDynamicFields()">필수/선택 초기화</button>
+        </div>
+
+        <button type="button" class="btn btn-primary w-100" onclick="generateLink()">링크 생성</button>
+    </form>
+
+    <h2>생성된 링크</h2>
+    <div class="text-center">
+        <p id="generatedLink" class="p-2 bg-light border rounded"></p>
+        <button id="copyButton" class="btn btn-secondary" style="display: none;" onclick="copyToClipboard()">복사</button>
+    </div>
+
+    <script>
+        const actionRequirements = {
+            ACTION_LINK_ALARM: { required: [], optional: [] ,projects: ["COMMON", "DELIVERY", "FLOWER"], description: "1. 알림함으로 이동"},
+            ACTION_LINK_INQUIRY_WRITE: { required: [], optional: [] ,projects: ["COMMON"], description: "1. 고객소리함으로 이동"},
+            ACTION_LINK_MILEAGE: { required: [], optional: [] ,projects: ["COMMON"], description: "1. 마일리지 화면으로 이동"},
+            ACTION_LINK_PAY_MANAGEMENT: { required: [], optional: [] ,projects: ["COMMON"], description: "1. 결제수단 관리 화면으로 이동"},
+            ACTION_LINK_COUPON_PUBLISH: { required: [], optional: ["couponCode"] ,projects: ["COMMON", "DELIVERY", "FLOWER"], description: "1. 쿠폰함 이동 <br>2. 쿠폰등록 : [couponCode : 영어/숫자] 입력시 쿠폰 자동 등록"},
+            ACTION_LINK_VOUCHER_PRODUCT_LIST: { required: [], optional: [] ,projects: ["COMMON"], description: "1. 상품권 구매화면으로 이동"},
+            ACTION_LINK_VOUCHER: { required: [], optional: ["code"] ,projects: ["COMMON"], description: "1. 상품권 보관함 이동 <br>2. 상품권등록 : [code : 영어/숫자] 입력시 상품권 자동 등록"},
+            ACTION_LINK_NOTICE: { required: ["code"], optional: [] ,projects: ["COMMON"], description: "1. 공지사항 상세화면 이동 : [code : 숫자] 게시글 번호 입력"},
+            ACTION_LINK_EVENT: { required: ["eventCode"], optional: [] ,projects: ["COMMON", "DELIVERY", "FLOWER", "RESERVE"], description: "1. 이벤트 상세화면 이동 : [code : 숫자] 게시글 번호 입력"},
+            ACTION_LINK_BRAND_LIST: { required: [], optional: ["chainCode"] ,projects: ["DELIVERY"], description: "1. 브랜드 목록화면 이동 <br>2. 브랜드 상세화면 이동: [chainCode : 영어/숫자] 브랜드코드 입력"},
+            ACTION_LINK_SHOP_LIST: { required: ["itemCd"], optional: ["filterCode"] ,projects: ["DELIVERY"], description: "1. 상점 목록화면 이동<br>2. 카테고리 추가 : [itemCd : 숫자] 카테고리 코드 입력<br>3. 필터 조회 : [filterCode : 영어] ONNURI_VOUCHER (온누리상품권) / GOOD_SHOP (착한 매장) / ORDER_MANY (주문 많은순) / NEW_SHOP (신규 매장)"},
+            ACTION_LINK_SHOP: { required: ["shopCode"], optional: [] ,projects: ["DELIVERY"], description: "1. 상점상세 화면 이동 : [shopCode : 숫자] 상점 코드 입력 "},
+            ACTION_LINK_SHOP_SEARCH: { required: [], optional: ["keyword"] ,projects: ["DELIVERY"],description: "1. 배달 검색화면 이동 <br>2. 검색화면 + 키워드 입력 : [keyword : 전체] 원하는 검색 단어"},
+            ACTION_LINK_MENU: { required: ["shopCode","menuCode"], optional: [] ,projects: ["DELIVERY"],description: "1. 메뉴상세화면 이동 : [shopCode : 숫자] 상점 코드 입력 <br>[menuCode : 숫자] 메뉴 코드 입력"},
+            ACTION_LINK_TRADITION_LIST: { required: [], optional: ["gungu"],projects: ["DELIVERY"],description: "1. 전통시장 목록화면 이동 <br>2. 군/구 선택 : [gungu : 한글] 원하는 군구 입력 ex) 서구" },
+            ACTION_LINK_TRADITION: { required: ["shopCode"], optional: ["viewType"] ,projects: ["DELIVERY"],description: "1. 장보기/전통시장 상세화면 이동(기본 장보기) : [shopCode : 숫자] <br>2. 보이는 기본 방식 변경 : [viewType : 숫자] 1: 장보기 상품 보기 / 2: 개별 상점 보기"},
+            ACTION_LINK_ALLEY: { required: [], optional: ["gungu","code"] ,projects: ["DELIVERY"],description: "1. 골목시장 목록화면 이동 <br>2. 군/구 선택 : [gungu : 한글] 원하는 군구 입력 ex) 서구 <br>3. 골목 상세 선택 : [code : 숫자] 골목 코드 입력"},
+            ACTION_LINK_PRODUCT_LIST: { required: [], optional: ["categoryCode"] ,projects: ["FLOWER"],description: "1. 꽃배달 상품 목록 화면 이동 <br>2. 카테고리 선택 : [categoryCode : 숫자] 카테고리 코드 입력"},
+            ACTION_LINK_PRODUCT: { required: ["productCode"], optional: ["projectSub","shopCode"] ,projects: ["DELIVERY", "FLOWER"],description: "1. 전통시장 상품상세 화면 이동 : [project DELIVERY 선택] [prjectSub : 영어] 'TRADITION' 입력 [shopCode : 숫자] 상점코드 입력 [productCode : 숫자] 상품코드 입력<br>2. 꽃배달 상품 상세 화면 이동 : [productCode : 숫자] 상품코드 입력"},
+            ACTION_LINK_PRODUCT_SEARCH: { required: [], optional: ["keyword"] ,projects: ["FLOWER"],description: "1. 꽃배달 검색화면 이동 <br>2. 검색화면 + 키워드 입력 : [keyword : 전체] 원하는 검색 단어"},
+            ACTION_LINK_ORDER: { required: [], optional: ["orderNo"] ,projects: ["DELIVERY", "FLOWER"],description: "1. 주문목록 화면으로 이동 <br> 2.주문내역 화면으로 이동 : [orderNo : 숫자] 오더번호 입력"}
+        };
+
+        function updateFields() {
+            const action = document.getElementById('action').value;
+            const projectWrapper = document.getElementById('projectWrapper');
+            const projectDropdown = document.getElementById('project');
+            const dynamicFields = document.getElementById('dynamicFields');
+            const actionDescription = document.getElementById('actionDescription');
+        
+            dynamicFields.innerHTML = '';
+        
+            if (!action || !actionRequirements[action]) {
+                projectWrapper.style.display = 'none';
+                actionDescription.style.display = 'none';
+                return;
+            }
+        
+            const { required, optional, projects, description } = actionRequirements[action];
+        
+            if (description) {
+                actionDescription.style.display = 'block';
+                actionDescription.innerHTML = description;
+            } else {
+                actionDescription.style.display = 'none';
+            }
+        
+            if (projects.length > 0) {
+                projectWrapper.style.display = 'block';
+                projectDropdown.innerHTML = '';
+                projects.forEach(project => {
+                    const option = document.createElement('option');
+                    const projectLabelMap = {
+                        COMMON: "공통 (COMMON)",
+                        DELIVERY: "배달 (DELIVERY)",
+                        FLOWER: "꽃배달 (FLOWER)",
+                        TAXI: "택시 (TAXI)",
+                        DRIVER: "대리 (DRIVER)",
+                        BUS: "버스 (BUS)",
+                        MEDICAL: "병의원 (MEDICAL)",
+                        RESERVE: "예약 (RESERVE)",
+                        ELECTRIC: "전자관 (ELECTRIC)",
+                        BIZ: "비즈 (BIZ)",
+                        BIZ_TAXI: "비즈 택시 (BIZ_TAXI)",
+                        BIZ_DRIVER: "비즈 대리 (BIZ_DRIVER)",
+                        BIZ_DELIVERY: "비즈 배달 (BIZ_DELIVERY)",
+                        BIZ_FLOWER: "비즈 꽃배달 (BIZ_FLOWER)"
+                    };
+                    option.value = project;
+                    option.innerHTML = projectLabelMap[project] || project; // 매핑된 값이 없으면 기본값 표시
+                    projectDropdown.appendChild(option);
+                });
+            } else {
+                projectWrapper.style.display = 'none';
+            }
+        
+            required.forEach(field => {
+                dynamicFields.innerHTML += `
+                    <div class="mb-3">
+                        <label for="${field}" class="form-label">${field}</label>
+                        <input type="text" id="${field}" name="${field}" class="form-control" placeholder="${field} (필수)">
+                    </div>
+                `;
+            });
+        
+            optional.forEach(field => {
+                dynamicFields.innerHTML += `
+                    <div class="mb-3">
+                        <label for="${field}" class="form-label">(선택) ${field}</label>
+                        <input type="text" id="${field}" name="${field}" class="form-control" placeholder="${field}">
+                    </div>
+                `;
+            });
+        }
+
+
+        function generateLink() {
+            const baseUrl = "https://app.daeguro.co.kr/app/public_link.html?";
+            const project = document.getElementById('project').value;
+            const action = document.getElementById('action').value;
+
+            if (!action) {
+                alert('액션을 선택하세요!');
+                return;
+            }
+
+            const { required, optional } = actionRequirements[action];
+
+             let queryParams = '';
+            
+            if (project) {
+                queryParams += `project=${project}&`;
+            }
+            
+            queryParams += `action=${action}`;
+
+            for (const field of required) {
+                const value = document.getElementById(field)?.value;
+                if (!value) {
+                    alert(`${field}는 필수 입력 항목입니다.`);
+                    return;
+                }
+                queryParams += `&${field}=${value}`;
+            }
+
+            for (const field of optional) {
+                const value = document.getElementById(field)?.value;
+                if (value) {
+                    queryParams += `&${field}=${value}`;
+                }
+            }
+
+            const fullLink = `${baseUrl}${queryParams}`;
+
+            const linkElement = document.getElementById('generatedLink');
+            linkElement.innerText = fullLink;
+
+            document.getElementById('copyButton').style.display = 'inline-block';
+        }
+
+        function copyToClipboard() {
+            const linkElement = document.getElementById('generatedLink');
+            navigator.clipboard.writeText(linkElement.innerText)
+                .then(() => alert('링크가 복사되었습니다!'))
+                .catch(() => alert('복사에 실패했습니다.'));
+        }
+
+        function resetAllFields() {
+            document.getElementById('action').value = '';
+            document.getElementById('dynamicFields').innerHTML = '';
+            document.getElementById('generatedLink').innerText = '';
+            document.getElementById('copyButton').style.display = 'none';
+            const projectWrapper = document.getElementById('projectWrapper');
+            projectWrapper.style.display = 'none';
+            document.getElementById('project').value = '';
+            document.getElementById('actionDescription').style.display = 'none';
+        }
+
+        function resetProject() {
+            const projectDropdown = document.getElementById('project');
+            projectDropdown.value = projectDropdown.options[0].value;
+        }
+
+        function resetDynamicFields() {
+            document.getElementById('dynamicFields').innerHTML = '';
+        }
+
+        function sortActionsAndReset() {
+            sortActions();
+            document.getElementById('action').value = '';
+            updateFields();
+        }
+
+        function sortActions() {
+            const actionDropdown = document.getElementById('action');
+            const sortOption = document.getElementById('sortOptions').value;
+            const options = Array.from(actionDropdown.options);
+
+            const defaultOption = options.shift();
+
+            let sortedOptions;
+            if (sortOption === "nameAsc") {
+                sortedOptions = options.sort((a, b) => a.text.localeCompare(b.text));
+            } else if (sortOption === "nameDesc") {
+                sortedOptions = options.sort((a, b) => b.text.localeCompare(a.text));
+            } else if (sortOption === "valueAsc") {
+                sortedOptions = options.sort((a, b) => a.value.localeCompare(b.value));
+            } else if (sortOption === "valueDesc") {
+                sortedOptions = options.sort((a, b) => b.value.localeCompare(a.value));
+            } else {
+                return;
+            }
+
+            actionDropdown.innerHTML = '';
+            actionDropdown.appendChild(defaultOption);
+            sortedOptions.forEach(option => actionDropdown.appendChild(option));
+        }
+    </script>
+</body>
+</html>
