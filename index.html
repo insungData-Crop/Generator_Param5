@@ -313,8 +313,11 @@
         }
 
         function resetDynamicFields() {
-            document.getElementById('dynamicFields').innerHTML = '';
-        }
+    const dynamicFields = document.getElementById('dynamicFields');
+    const inputs = dynamicFields.querySelectorAll('input');
+    inputs.forEach(input => input.value = '');
+}
+
 
         function sortActionsAndReset() {
             sortActions();
